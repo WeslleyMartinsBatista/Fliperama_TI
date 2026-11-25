@@ -156,7 +156,7 @@ class _LoginViewState extends State<LoginView>
                             hintText: 'player1@arcade.com',
                             prefixIcon: const Icon(
                               Icons.email_outlined,
-                              color: Color(0xFF00E5FF),
+                              color: Color(0xFFFFE600),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -182,7 +182,7 @@ class _LoginViewState extends State<LoginView>
                             labelText: 'Senha',
                             prefixIcon: const Icon(
                               Icons.key_outlined,
-                              color: Color(0xFFFF2A85),
+                              color: Color(0xFFFFE600),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(

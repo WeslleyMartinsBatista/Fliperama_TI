@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fliperama_ti/controller/LoginController.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -12,13 +13,13 @@ class _LoginViewState extends State<LoginView>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final LoginController _loginController;
 
   late final AnimationController _bgController;
   late final Animation<Alignment> _beginAlignment;
   late final Animation<Alignment> _endAlignment;
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   // Paleta nostálgica de fliperama: roxo profundo de CRT, magenta neon e ciano retrô
   static const List<Color> _arcadeGradientColors = [
@@ -31,6 +32,8 @@ class _LoginViewState extends State<LoginView>
   @override
   void initState() {
     super.initState();
+    _loginController = LoginController();
+
     _bgController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
@@ -54,6 +57,7 @@ class _LoginViewState extends State<LoginView>
 
   @override
   void dispose() {
+    _loginController.dispose();
     _bgController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -61,18 +65,31 @@ class _LoginViewState extends State<LoginView>
   }
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
 
-      await Future.delayed(const Duration(seconds: 2));
+    final success = await _loginController.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
 
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+    if (!mounted) return;
 
+    if (success) {
+      final userEmail =
+          _loginController.authenticatedUser?.email ??
+          _emailController.text.trim();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('PLAYER 1 READY — ${_emailController.text}'),
+          content: Text('PLAYER 1 READY — $userEmail'),
           backgroundColor: const Color(0xFF00E5FF),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (_loginController.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_loginController.errorMessage!),
+          backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -222,33 +239,41 @@ class _LoginViewState extends State<LoginView>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: _isLoading ? null : _handleLogin,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF2A85),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'ENTRAR',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
+                        ListenableBuilder(
+                          listenable: _loginController,
+                          builder: (context, _) {
+                            final isLoading = _loginController.isLoading;
+                            return FilledButton(
+                              onPressed: isLoading ? null : _handleLogin,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF2A85),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
                                 ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'ENTRAR',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                            );
+                          },
                         ),
                       ],
                     ),

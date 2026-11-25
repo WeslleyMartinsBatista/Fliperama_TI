@@ -242,7 +242,7 @@ class _LoginViewState extends State<LoginView>
                                   ),
                                 )
                               : const Text(
-                                  'INSERT COIN / ENTRAR',
+                                  'ENTRAR',
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,

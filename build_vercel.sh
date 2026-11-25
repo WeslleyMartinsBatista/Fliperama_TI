@@ -11,4 +11,6 @@ export PATH="$PWD/flutter/bin:$PATH"
 
 flutter --version
 flutter pub get
-flutter build web --release
+flutter build web --release \
+  --dart-define=SUPABASE_URL="https://gsfrmnvfcwwkplwjwqat.supabase.co/rest/v1/" \
+  --dart-define=SUPABASE_ANON_KEY="sb_publishable_iyGMdVfO0ElUaAdE3o-09A_kogbus08"

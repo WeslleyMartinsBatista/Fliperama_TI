@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/ColaboradorModel.dart';
 
 class LoginFailure implements Exception {
   final String message;
@@ -13,47 +14,50 @@ class LoginService {
   final SupabaseClient _client;
 
   LoginService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+      : _client = client ?? Supabase.instance.client;
 
-  Future<User> signInWithEmailAndPassword({
-    required String email,
+  Future<ColaboradorModel> signInWithLogin({
+    required String login,
     required String password,
   }) async {
-    try {
-      final response = await _client.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
+    final normalizedLogin = login.trim().toLowerCase();
 
-      final user = response.user;
-      if (user == null) {
-        throw const LoginFailure('Não foi possível obter os dados do jogador.');
+    try {
+      final data = await _client
+          .from('colaboradores')
+          .select('*, perfis_acesso(nome)')
+          .eq('login', normalizedLogin)
+          .maybeSingle();
+
+      if (data == null) {
+        throw const LoginFailure('Login ou senha inválidos.');
       }
 
-      return user;
-    } on AuthException catch (e) {
-      throw LoginFailure(_mapAuthError(e.message));
+      final colaborador = ColaboradorModel.fromMap(data);
+
+      // Comparação direta enquanto senha_hash guarda a senha original
+      if (password != colaborador.senhaHash) {
+        throw const LoginFailure('Login ou senha inválidos.');
+      }
+
+      if (colaborador.status != 'ativo') {
+        throw LoginFailure(
+          'Acesso bloqueado: colaborador com status "${colaborador.status}".',
+        );
+      }
+
+      await _client
+          .from('colaboradores')
+          .update({'ultimo_acesso': DateTime.now().toUtc().toIso8601String()})
+          .eq('id', colaborador.id);
+
+      return colaborador;
+    } on PostgrestException catch (e) {
+      throw LoginFailure('Erro ao consultar o banco: ${e.message}');
     } on LoginFailure {
       rethrow;
     } catch (_) {
-      throw const LoginFailure('Falha de conexão com o servidor.');
+      throw const LoginFailure('Falha ao validar credenciais ou conectar ao servidor.');
     }
-  }
-
-  Future<void> signOut() async {
-    await _client.auth.signOut();
-  }
-
-  User? get currentUser => _client.auth.currentUser;
-
-  String _mapAuthError(String message) {
-    final normalized = message.toLowerCase();
-    if (normalized.contains('invalid login credentials')) {
-      return 'E-mail ou senha inválidos.';
-    }
-    if (normalized.contains('email not confirmed')) {
-      return 'Confirme seu e-mail antes de entrar.';
-    }
-    return message;
   }
 }

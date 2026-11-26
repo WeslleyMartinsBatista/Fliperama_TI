@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../model/ColaboradorModel.dart';
 import '../service/LoginService.dart';
 
 class LoginController extends ChangeNotifier {
@@ -11,23 +11,23 @@ class LoginController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  User? _authenticatedUser;
+  ColaboradorModel? _authenticatedColaborador;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  User? get authenticatedUser => _authenticatedUser;
+  ColaboradorModel? get authenticatedColaborador => _authenticatedColaborador;
 
-  Future<bool> login({required String email, required String password}) async {
+  Future<bool> login({required String login, required String password}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final user = await _loginService.signInWithEmailAndPassword(
-        email: email,
+      final colaborador = await _loginService.signInWithLogin(
+        login: login,
         password: password,
       );
-      _authenticatedUser = user;
+      _authenticatedColaborador = colaborador;
       return true;
     } on LoginFailure catch (e) {
       _errorMessage = e.message;

@@ -11,7 +11,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _loginFieldController = TextEditingController();
   final _passwordController = TextEditingController();
   late final LoginController _loginController;
 
@@ -59,7 +59,7 @@ class _LoginViewState extends State<LoginView>
   void dispose() {
     _loginController.dispose();
     _bgController.dispose();
-    _emailController.dispose();
+    _loginFieldController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -68,23 +68,30 @@ class _LoginViewState extends State<LoginView>
     if (!_formKey.currentState!.validate()) return;
 
     final success = await _loginController.login(
-      email: _emailController.text,
+      login: _loginFieldController.text,
       password: _passwordController.text,
     );
 
     if (!mounted) return;
 
     if (success) {
-      final userEmail =
-          _loginController.authenticatedUser?.email ??
-          _emailController.text.trim();
+      final colaborador = _loginController.authenticatedColaborador!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('PLAYER 1 READY — $userEmail'),
+          content: Text(
+            'PLAYER 1 READY  ${colaborador.nomeCompleto.toUpperCase()} (${colaborador.perfilNome.toUpperCase()})',
+          ),
           backgroundColor: const Color(0xFF00E5FF),
           behavior: SnackBarBehavior.floating,
         ),
       );
+
+      // switch (colaborador.perfilNome) {
+      //   case 'caixa': ...
+      //   case 'gerente': ...
+      //   case 'tecnico': ...
+      //   case 'administrador': ...
+      // }
     } else if (_loginController.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,14 +172,14 @@ class _LoginViewState extends State<LoginView>
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: _loginFieldController,
+                          keyboardType: TextInputType.text,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
-                            labelText: 'E-mail',
-                            hintText: 'player1@arcade.com',
+                            labelText: 'Login',
+                            hintText: 'user.perfil',
                             prefixIcon: const Icon(
-                              Icons.email_outlined,
+                              Icons.person_outline,
                               color: Color(0xFFFFE600),
                             ),
                             border: OutlineInputBorder(
@@ -181,10 +188,7 @@ class _LoginViewState extends State<LoginView>
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Por favor, digite seu e-mail';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Digite um e-mail válido';
+                              return 'Por favor, digite seu login';
                             }
                             return null;
                           },
@@ -220,9 +224,6 @@ class _LoginViewState extends State<LoginView>
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Por favor, digite sua senha';
-                            }
-                            if (value.length < 6) {
-                              return 'A senha deve ter pelo menos 6 caracteres';
                             }
                             return null;
                           },
